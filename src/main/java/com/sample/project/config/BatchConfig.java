@@ -56,7 +56,7 @@ public class BatchConfig {
 			public Customer process(Customer customer) throws Exception {
 				String country = customer.getCountry();
 				// Filter records for China and Ukraine
-				if ("China".equalsIgnoreCase(country) || "Ukraine".equalsIgnoreCase(country)) {
+				if ("China".equalsIgnoreCase(country)) {
 					return customer;
 				} else {
 					return null; // Return null to skip records for other countries
@@ -95,23 +95,4 @@ public class BatchConfig {
 		return new JobCompletionNotificationListener();
 	}
 
-	// Processor class
-	public static class CustomerItemProcessor implements ItemProcessor<Customer, Customer> {
-		@Override
-		public Customer process(final Customer customer) throws Exception {
-			return customer; // Or any transformation you need
-		}
-	}
-
-	// Listener class
-	public static class JobCompletionNotificationListener extends JobExecutionListenerSupport {
-
-		@Override
-		public void afterJob(JobExecution jobExecution) {
-			if (jobExecution.getStatus() == BatchStatus.COMPLETED) {
-				// Log or handle completed job
-				System.out.println("JOB FINISHED!");
-			}
-		}
-	}
 }
