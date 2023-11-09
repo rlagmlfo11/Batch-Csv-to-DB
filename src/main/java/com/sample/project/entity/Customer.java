@@ -8,58 +8,161 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name = "customer")
+@Table(name = "CUSTOMER")
 public class Customer {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	private Long id;
 
-	@Column(name = "NAME")
-	private String name;
+	@Column(name = "FIRST_NAME")
+	private String firstname;
 
-	@Column(name = "MAIL")
-	private String mail;
+	@Column(name = "LAST_NAME")
+	private String lastname;
 
-	// Default constructor
+	@Column(name = "EMAIL")
+	private String email;
+
+	@Column(name = "GENDER")
+	private String gender;
+
+	@Column(name = "CONTACT_NUMBER")
+	private String contactNumber;
+
+	@Column(name = "COUNTRY")
+	private String country;
+
+	@Column(name = "DOB")
+	private String dob;
+
 	public Customer() {
+
 	}
 
-	// Constructor, getters, and setters
-	public Customer(Long id, String name, String mail) {
+	public Customer(Long id, String firstname, String lastname, String email, String gender,
+			String contactNumber, String country, String dob) {
+		super();
 		this.id = id;
-		this.name = name;
-		this.mail = mail;
+		this.firstname = firstname;
+		this.lastname = lastname;
+		this.email = email;
+		this.gender = gender;
+		this.contactNumber = contactNumber;
+		this.country = country;
+		this.dob = dob;
 	}
 
-	// Getters and setters
+	/**
+	 * @return the id
+	 */
 	public Long getId() {
 		return id;
 	}
 
+	/**
+	 * @param id the id to set
+	 */
 	public void setId(Long id) {
 		this.id = id;
 	}
 
-	public String getName() {
-		return name;
+	/**
+	 * @return the firstname
+	 */
+	public String getFirstname() {
+		return firstname;
 	}
 
-	public void setName(String name) {
-		this.name = name;
+	/**
+	 * @param firstname the firstname to set
+	 */
+	public void setFirstname(String firstname) {
+		this.firstname = firstname;
 	}
 
-	public String getMail() {
-		return mail;
+	/**
+	 * @return the lastname
+	 */
+	public String getLastname() {
+		return lastname;
 	}
 
-	public void setMail(String mail) {
-		this.mail = mail;
+	/**
+	 * @param lastname the lastname to set
+	 */
+	public void setLastname(String lastname) {
+		this.lastname = lastname;
 	}
 
-	// toString method for debugging purposes
-	@Override
-	public String toString() {
-		return "Customer{" + "id=" + id + ", name='" + name + '\'' + ", mail='" + mail + '\'' + '}';
+	/**
+	 * @return the email
+	 */
+	public String getEmail() {
+		return email;
 	}
+
+	/**
+	 * @param email the email to set
+	 */
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+	/**
+	 * @return the gender
+	 */
+	public String getGender() {
+		return gender;
+	}
+
+	/**
+	 * @param gender the gender to set
+	 */
+	public void setGender(String gender) {
+		this.gender = gender;
+	}
+
+	/**
+	 * @return the contactNumber
+	 */
+	public String getContactNumber() {
+		return contactNumber;
+	}
+
+	/**
+	 * @param contactNumber the contactNumber to set
+	 */
+	public void setContactNumber(String contactNumber) {
+		this.contactNumber = contactNumber;
+	}
+
+	/**
+	 * @return the country
+	 */
+	public String getCountry() {
+		return country;
+	}
+
+	/**
+	 * @param country the country to set
+	 */
+	public void setCountry(String country) {
+		this.country = country;
+	}
+
+	/**
+	 * @return the dob
+	 */
+	public String getDob() {
+		return dob;
+	}
+
+	/**
+	 * @param dob the dob to set
+	 */
+	public void setDob(String dob) {
+		this.dob = dob;
+	}
+
 }

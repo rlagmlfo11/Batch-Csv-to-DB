@@ -40,12 +40,29 @@ public class BatchConfig {
 	public FlatFileItemReader<Customer> reader() {
 		return new FlatFileItemReaderBuilder<Customer>().name("customerItemReader")
 				.resource(new ClassPathResource("customer.csv")).delimited()
-				.names(new String[] { "id", "name", "mail" }).linesToSkip(1)
-				.fieldSetMapper(new BeanWrapperFieldSetMapper<Customer>() {
+				.names(new String[] { "id", "firstname", "lastname", "email", "gender",
+						"contactNumber", "country", "dob" })
+				.linesToSkip(1).fieldSetMapper(new BeanWrapperFieldSetMapper<Customer>() {
 					{
 						setTargetType(Customer.class);
 					}
 				}).build();
+	}
+
+	@Bean
+	public ItemProcessor<Customer, Customer> processor1() {
+		return new ItemProcessor<Customer, Customer>() {
+			@Override
+			public Customer process(Customer customer) throws Exception {
+				String country = customer.getCountry();
+				// Filter records for China and Ukraine
+				if ("China".equalsIgnoreCase(country) || "Ukraine".equalsIgnoreCase(country)) {
+					return customer;
+				} else {
+					return null; // Return null to skip records for other countries
+				}
+			}
+		};
 	}
 
 	@Bean
@@ -70,7 +87,12 @@ public class BatchConfig {
 	@Bean
 	public Step step1(ItemWriter<Customer> writer) {
 		return stepBuilderFactory.get("step1").<Customer, Customer>chunk(10).reader(reader())
-				.processor(processor()).writer(writer).build();
+				.processor(processor1()).writer(writer).build();
+	}
+
+	@Bean
+	public JobCompletionNotificationListener jobExecutionListener() {
+		return new JobCompletionNotificationListener();
 	}
 
 	// Processor class
@@ -79,11 +101,6 @@ public class BatchConfig {
 		public Customer process(final Customer customer) throws Exception {
 			return customer; // Or any transformation you need
 		}
-	}
-
-	@Bean
-	public JobCompletionNotificationListener jobExecutionListener() {
-		return new JobCompletionNotificationListener();
 	}
 
 	// Listener class
