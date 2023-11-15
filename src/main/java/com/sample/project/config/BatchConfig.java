@@ -55,11 +55,10 @@ public class BatchConfig {
 			@Override
 			public Customer process(Customer customer) throws Exception {
 				String country = customer.getCountry();
-				// Filter records for China and Ukraine
-				if ("China".equalsIgnoreCase(country)) {
+				if ("China".equalsIgnoreCase(country) || "France".equalsIgnoreCase(country)) {
 					return customer;
 				} else {
-					return null; // Return null to skip records for other countries
+					return null;
 				}
 			}
 		};
@@ -90,9 +89,26 @@ public class BatchConfig {
 				.processor(processor1()).writer(writer).build();
 	}
 
+	public static class CustomerItemProcessor implements ItemProcessor<Customer, Customer> {
+		@Override
+		public Customer process(final Customer customer) throws Exception {
+			return customer;
+		}
+	}
+
 	@Bean
 	public JobCompletionNotificationListener jobExecutionListener() {
 		return new JobCompletionNotificationListener();
+	}
+
+	public static class JobCompletionNotificationListener extends JobExecutionListenerSupport {
+
+		@Override
+		public void afterJob(JobExecution jobExecution) {
+			if (jobExecution.getStatus() == BatchStatus.COMPLETED) {
+				System.out.println("JOB FINISHED!");
+			}
+		}
 	}
 
 }
