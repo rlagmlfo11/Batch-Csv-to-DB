@@ -1,5 +1,9 @@
 package com.sample.project.config;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobExecution;
@@ -15,13 +19,16 @@ import org.springframework.batch.item.data.RepositoryItemWriter;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
 import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
+import org.springframework.batch.item.support.builder.CompositeItemWriterBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 
+import com.sample.project.dto.CustomerHistoryRepository;
 import com.sample.project.dto.CustomerRepository;
 import com.sample.project.entity.Customer;
+import com.sample.project.entity.CustomerHistory;
 
 @Configuration
 @EnableBatchProcessing
@@ -35,6 +42,9 @@ public class BatchConfig {
 
 	@Autowired
 	private CustomerRepository customerRepository;
+
+	@Autowired
+	private CustomerHistoryRepository customerHistoryRepository;
 
 	@Bean
 	public FlatFileItemReader<Customer> reader() {
@@ -54,8 +64,7 @@ public class BatchConfig {
 		return new ItemProcessor<Customer, Customer>() {
 			@Override
 			public Customer process(Customer customer) throws Exception {
-				String country = customer.getCountry();
-				if ("China".equalsIgnoreCase(country) || "France".equalsIgnoreCase(country)) {
+				if ("China".equalsIgnoreCase(customer.getCountry())) {
 					return customer;
 				} else {
 					return null;
@@ -65,12 +74,7 @@ public class BatchConfig {
 	}
 
 	@Bean
-	public CustomerItemProcessor processor() {
-		return new CustomerItemProcessor();
-	}
-
-	@Bean
-	public RepositoryItemWriter<Customer> writer() {
+	public ItemWriter<Customer> customerWriter() {
 		RepositoryItemWriter<Customer> writer = new RepositoryItemWriter<>();
 		writer.setRepository(customerRepository);
 		writer.setMethodName("save");
@@ -78,22 +82,52 @@ public class BatchConfig {
 	}
 
 	@Bean
-	public Job importUserJob(JobCompletionNotificationListener listener, Step step1) {
-		return jobBuilderFactory.get("importCustomerJob").incrementer(new RunIdIncrementer())
-				.listener(listener).flow(step1).end().build();
+	public ItemWriter<Customer> customerHistoryWriter() {
+		RepositoryItemWriter<CustomerHistory> writer = new RepositoryItemWriter<>();
+		writer.setRepository(customerHistoryRepository);
+		writer.setMethodName("save");
+		return new ItemWriter<Customer>() {
+			@Override
+			public void write(List<? extends Customer> customers) throws Exception {
+				List<CustomerHistory> customerHistories = customers.stream()
+						.map(customer -> convertToCustomerHistory(customer))
+						.collect(Collectors.toList());
+				writer.write(customerHistories);
+			}
+		};
+	}
+
+	private CustomerHistory convertToCustomerHistory(Customer customer) {
+		CustomerHistory history = new CustomerHistory();
+		history.setId(customer.getId());
+		history.setFirstname(customer.getFirstname());
+		history.setLastname(customer.getLastname());
+		history.setEmail(customer.getEmail());
+		history.setGender(customer.getGender());
+		history.setContactNumber(customer.getContactNumber());
+		history.setCountry(customer.getCountry());
+		history.setDob(customer.getDob());
+		return history;
 	}
 
 	@Bean
-	public Step step1(ItemWriter<Customer> writer) {
-		return stepBuilderFactory.get("step1").<Customer, Customer>chunk(10).reader(reader())
-				.processor(processor1()).writer(writer).build();
+	public ItemWriter<Customer> compositeItemWriter() {
+		List<ItemWriter<? super Customer>> writers = new ArrayList<>();
+		writers.add(customerWriter());
+		writers.add(customerHistoryWriter());
+		return new CompositeItemWriterBuilder<Customer>().delegates(writers).build();
 	}
 
-	public static class CustomerItemProcessor implements ItemProcessor<Customer, Customer> {
-		@Override
-		public Customer process(final Customer customer) throws Exception {
-			return customer;
-		}
+	@Bean
+	public Step step1() {
+		return stepBuilderFactory.get("step1").<Customer, Customer>chunk(10).reader(reader())
+				.processor(processor1()).writer(compositeItemWriter()).build();
+	}
+
+	@Bean
+	public Job importUserJob(JobCompletionNotificationListener listener) {
+		return jobBuilderFactory.get("importCustomerJob").incrementer(new RunIdIncrementer())
+				.listener(listener).flow(step1()).end().build();
 	}
 
 	@Bean
@@ -102,7 +136,6 @@ public class BatchConfig {
 	}
 
 	public static class JobCompletionNotificationListener extends JobExecutionListenerSupport {
-
 		@Override
 		public void afterJob(JobExecution jobExecution) {
 			if (jobExecution.getStatus() == BatchStatus.COMPLETED) {
