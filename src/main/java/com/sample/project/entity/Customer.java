@@ -6,6 +6,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.xml.crypto.Data;
 
 @Entity
 @Table(name = "CUSTOMER")
@@ -36,12 +37,15 @@ public class Customer {
 	@Column(name = "DOB")
 	private String dob;
 
+	@Column(name = "receivedDate")
+	private String receivedDate;
+
 	public Customer() {
 
 	}
 
 	public Customer(Long id, String firstname, String lastname, String email, String gender,
-			String contactNumber, String country, String dob) {
+			String contactNumber, String country, String dob, String receivedDate) {
 		super();
 		this.id = id;
 		this.firstname = firstname;
@@ -51,6 +55,7 @@ public class Customer {
 		this.contactNumber = contactNumber;
 		this.country = country;
 		this.dob = dob;
+		this.receivedDate = receivedDate;
 	}
 
 	/**
@@ -163,6 +168,20 @@ public class Customer {
 	 */
 	public void setDob(String dob) {
 		this.dob = dob;
+	}
+
+	/**
+	 * @return the receivedDate
+	 */
+	public String getReceivedDate() {
+		return receivedDate;
+	}
+
+	/**
+	 * @param receivedDate the receivedDate to set
+	 */
+	public void setReceivedDate(String receivedDate) {
+		this.receivedDate = receivedDate;
 	}
 
 }

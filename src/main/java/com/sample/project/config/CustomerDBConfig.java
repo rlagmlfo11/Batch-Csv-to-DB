@@ -1,5 +1,9 @@
 package com.sample.project.config;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobExecution;
@@ -18,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.stereotype.Component;
 
 import com.sample.project.dto.CustomerRepository;
 import com.sample.project.entity.Customer;
@@ -25,6 +30,10 @@ import com.sample.project.entity.Customer;
 @Configuration
 @EnableBatchProcessing
 public class CustomerDBConfig {
+
+	LocalDateTime currentDate = LocalDateTime.now();
+	DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd HHmm");
+	String formattedDate = currentDate.format(formatter);
 
 	@Autowired
 	public JobBuilderFactory jobBuilderFactory;
@@ -54,6 +63,7 @@ public class CustomerDBConfig {
 			@Override
 			public Customer process(Customer customer) throws Exception {
 				if ("China".equalsIgnoreCase(customer.getCountry())) {
+					customer.setReceivedDate(formattedDate);
 					return customer;
 				} else {
 					return null;
@@ -78,22 +88,62 @@ public class CustomerDBConfig {
 
 	@Bean
 	public Job importUserJob(JobCompletionNotificationListener listener) {
-		return jobBuilderFactory.get("importCustomerJob").incrementer(new RunIdIncrementer())
+		Job job = jobBuilderFactory.get("importCustomerJob").incrementer(new RunIdIncrementer())
 				.listener(listener).flow(step1()).end().build();
+
+		// Consider placing cleanup logic here if you want to ensure database is cleaned
+		// before job execution
+		return job;
 	}
 
-	@Bean
-	public JobCompletionNotificationListener jobExecutionListener() {
-		return new JobCompletionNotificationListener();
-	}
-
+	@Component
 	public static class JobCompletionNotificationListener extends JobExecutionListenerSupport {
+		@Autowired
+		private CustomerRepository customerRepository;
+
+		@Override
+		public void beforeJob(JobExecution jobExecution) {
+			super.beforeJob(jobExecution);
+			// Optional: Cleanup logic here if you prefer cleanup before each job starts
+		}
+
 		@Override
 		public void afterJob(JobExecution jobExecution) {
 			if (jobExecution.getStatus() == BatchStatus.COMPLETED) {
-				System.out.println("customer database finished");
+				System.out.println("Customer database finished. Checking for data cleanup...");
+
+				// Example cleanup logic
+				String oldestReceivedDate = customerRepository.findOldestReceivedDate();
+				if (oldestReceivedDate != null) {
+					// Assuming you have a way to check if there are more than two distinct dates
+					List<String> distinctDates = customerRepository.findDistinctReceivedDates();
+					if (distinctDates.size() > 2) {
+						customerRepository.deleteByReceivedDate(oldestReceivedDate);
+						System.out.println("Old data from " + oldestReceivedDate + " deleted.");
+					}
+				}
 			}
 		}
 	}
+
+//	@Bean
+//	public Job importUserJob(JobCompletionNotificationListener listener) {
+//		return jobBuilderFactory.get("importCustomerJob").incrementer(new RunIdIncrementer())
+//				.listener(listener).flow(step1()).end().build();
+//	}
+//
+//	@Bean
+//	public JobCompletionNotificationListener jobExecutionListener() {
+//		return new JobCompletionNotificationListener();
+//	}
+//
+//	public static class JobCompletionNotificationListener extends JobExecutionListenerSupport {
+//		@Override
+//		public void afterJob(JobExecution jobExecution) {
+//			if (jobExecution.getStatus() == BatchStatus.COMPLETED) {
+//				System.out.println("customer database finished");
+//			}
+//		}
+//	}
 
 }
