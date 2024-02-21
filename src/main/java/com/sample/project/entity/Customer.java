@@ -28,34 +28,29 @@ public class Customer {
 	@Column(name = "GENDER")
 	private String gender;
 
-	@Column(name = "CONTACT_NUMBER")
-	private String contactNumber;
-
-	@Column(name = "COUNTRY")
-	private String country;
-
-	@Column(name = "DOB")
-	private String dob;
-
-	@Column(name = "receivedDate")
-	private String receivedDate;
+//	@Column(name = "CONTACT_NUMBER")
+//	private String contactNumber;
+//
+//	@Column(name = "COUNTRY")
+//	private String country;
+//
+//	@Column(name = "DOB")
+//	private String dob;
+//
+//	@Column(name = "receivedDate")
+//	private String receivedDate;
 
 	public Customer() {
 
 	}
 
-	public Customer(Long id, String firstname, String lastname, String email, String gender,
-			String contactNumber, String country, String dob, String receivedDate) {
+	public Customer(Long id, String firstname, String lastname, String email, String gender) {
 		super();
 		this.id = id;
 		this.firstname = firstname;
 		this.lastname = lastname;
 		this.email = email;
 		this.gender = gender;
-		this.contactNumber = contactNumber;
-		this.country = country;
-		this.dob = dob;
-		this.receivedDate = receivedDate;
 	}
 
 	/**
@@ -126,62 +121,6 @@ public class Customer {
 	 */
 	public void setGender(String gender) {
 		this.gender = gender;
-	}
-
-	/**
-	 * @return the contactNumber
-	 */
-	public String getContactNumber() {
-		return contactNumber;
-	}
-
-	/**
-	 * @param contactNumber the contactNumber to set
-	 */
-	public void setContactNumber(String contactNumber) {
-		this.contactNumber = contactNumber;
-	}
-
-	/**
-	 * @return the country
-	 */
-	public String getCountry() {
-		return country;
-	}
-
-	/**
-	 * @param country the country to set
-	 */
-	public void setCountry(String country) {
-		this.country = country;
-	}
-
-	/**
-	 * @return the dob
-	 */
-	public String getDob() {
-		return dob;
-	}
-
-	/**
-	 * @param dob the dob to set
-	 */
-	public void setDob(String dob) {
-		this.dob = dob;
-	}
-
-	/**
-	 * @return the receivedDate
-	 */
-	public String getReceivedDate() {
-		return receivedDate;
-	}
-
-	/**
-	 * @param receivedDate the receivedDate to set
-	 */
-	public void setReceivedDate(String receivedDate) {
-		this.receivedDate = receivedDate;
 	}
 
 }

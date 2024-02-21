@@ -16,6 +16,8 @@ import org.springframework.batch.core.listener.JobExecutionListenerSupport;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.data.RepositoryItemWriter;
 import org.springframework.batch.item.file.FlatFileItemReader;
+import org.springframework.batch.item.file.FlatFileParseException;
+import org.springframework.batch.item.file.LineMapper;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
 import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,17 +46,63 @@ public class CustomerDBConfig {
 	@Autowired
 	private CustomerRepository customerRepository;
 
+//	@Bean
+//	public FlatFileItemReader<Customer> reader() {
+//		return new FlatFileItemReaderBuilder<Customer>().name("customerItemReader")
+//				.resource(new ClassPathResource("customer.csv"))
+//				.delimited()
+//				.names(new String[] { "id", "firstname", "lastname", "email", "gender" })
+//				.linesToSkip(1)
+//				.fieldSetMapper(new BeanWrapperFieldSetMapper<Customer>() {
+//					{
+//						setTargetType(Customer.class);
+//					}
+//				}).build();
+//	}
 	@Bean
 	public FlatFileItemReader<Customer> reader() {
-		return new FlatFileItemReaderBuilder<Customer>().name("customerItemReader")
-				.resource(new ClassPathResource("customer.csv")).delimited()
-				.names(new String[] { "id", "firstname", "lastname", "email", "gender",
-						"contactNumber", "country", "dob" })
-				.linesToSkip(1).fieldSetMapper(new BeanWrapperFieldSetMapper<Customer>() {
-					{
-						setTargetType(Customer.class);
-					}
-				}).build();
+		FlatFileItemReader<Customer> reader = new FlatFileItemReader<>();
+		reader.setResource(new ClassPathResource("customer.csv"));
+		reader.setLinesToSkip(1); // Skip header row
+
+		reader.setLineMapper(new LineMapper<Customer>() {
+
+			@Override
+			public Customer mapLine(String line, int lineNumber) throws Exception {
+				String[] tokens = line.split(",");
+				if (tokens.length < 5) {
+					throw new FlatFileParseException("Not enough data in line", line, lineNumber);
+				}
+				Customer customer = new Customer();
+				customer.setId(Long.parseLong(tokens[0]));
+				customer.setFirstname(tokens[1]);
+				customer.setLastname(tokens[2]);
+				customer.setEmail(tokens[3]);
+				customer.setGender(tokens[4]);
+				// Add more fields as needed
+				return customer;
+			}
+		});
+
+//		reader.setLineMapper(new LineMapper<Customer>() {
+//			@Override
+//			public Customer mapLine(String line, int lineNumber) throws Exception {
+//				String[] tokens = line.split(",");
+//				if (tokens.length < 5) {
+//					throw new FlatFileParseException("Not enough data in line", line, lineNumber);
+//				}
+//				Customer customer = new Customer();
+//				customer.setId(Long.parseLong(tokens[0]));
+//				customer.setFirstname(tokens[1]);
+//				customer.setLastname(tokens[2]);
+//				customer.setEmail(tokens[3]);
+//				customer.setGender(tokens[4]);
+//				// Add more fields as needed
+//				return customer;
+//			}
+//		});
+
+		return reader;
 	}
 
 	@Bean
@@ -62,12 +110,7 @@ public class CustomerDBConfig {
 		return new ItemProcessor<Customer, Customer>() {
 			@Override
 			public Customer process(Customer customer) throws Exception {
-				if ("China".equalsIgnoreCase(customer.getCountry())) {
-					customer.setReceivedDate(formattedDate);
-					return customer;
-				} else {
-					return null;
-				}
+				return customer;
 			}
 		};
 	}
@@ -87,44 +130,45 @@ public class CustomerDBConfig {
 	}
 
 	@Bean
-	public Job importUserJob(JobCompletionNotificationListener listener) {
+	public Job importUserJob() {
 		Job job = jobBuilderFactory.get("importCustomerJob").incrementer(new RunIdIncrementer())
-				.listener(listener).flow(step1()).end().build();
+				.flow(step1()).end().build();
 
 		// Consider placing cleanup logic here if you want to ensure database is cleaned
 		// before job execution
 		return job;
-	}
+	};
 
-	@Component
-	public static class JobCompletionNotificationListener extends JobExecutionListenerSupport {
-		@Autowired
-		private CustomerRepository customerRepository;
+}
+//	@Component
+//	public static class JobCompletionNotificationListener extends JobExecutionListenerSupport {
+//		@Autowired
+//		private CustomerRepository customerRepository;
+//
+//		@Override
+//		public void beforeJob(JobExecution jobExecution) {
+//			super.beforeJob(jobExecution);
+//			// Optional: Cleanup logic here if you prefer cleanup before each job starts
+//		}
 
-		@Override
-		public void beforeJob(JobExecution jobExecution) {
-			super.beforeJob(jobExecution);
-			// Optional: Cleanup logic here if you prefer cleanup before each job starts
-		}
-
-		@Override
-		public void afterJob(JobExecution jobExecution) {
-			if (jobExecution.getStatus() == BatchStatus.COMPLETED) {
-				System.out.println("Customer database finished. Checking for data cleanup...");
-
-				// Example cleanup logic
-				String oldestReceivedDate = customerRepository.findOldestReceivedDate();
-				if (oldestReceivedDate != null) {
-					// Assuming you have a way to check if there are more than two distinct dates
-					List<String> distinctDates = customerRepository.findDistinctReceivedDates();
-					if (distinctDates.size() > 2) {
-						customerRepository.deleteByReceivedDate(oldestReceivedDate);
-						System.out.println("Old data from " + oldestReceivedDate + " deleted.");
-					}
-				}
-			}
-		}
-	}
+//		@Override
+//		public void afterJob(JobExecution jobExecution) {
+//			if (jobExecution.getStatus() == BatchStatus.COMPLETED) {
+//				System.out.println("Customer database finished. Checking for data cleanup...");
+//
+//				// Example cleanup logic
+//				String oldestReceivedDate = customerRepository.findOldestReceivedDate();
+//				if (oldestReceivedDate != null) {
+//					// Assuming you have a way to check if there are more than two distinct dates
+//					List<String> distinctDates = customerRepository.findDistinctReceivedDates();
+//					if (distinctDates.size() > 2) {
+//						customerRepository.deleteByReceivedDate(oldestReceivedDate);
+//						System.out.println("Old data from " + oldestReceivedDate + " deleted.");
+//					}
+//				}
+//			}
+//		}
+//}
 
 //	@Bean
 //	public Job importUserJob(JobCompletionNotificationListener listener) {
@@ -145,5 +189,3 @@ public class CustomerDBConfig {
 //			}
 //		}
 //	}
-
-}
