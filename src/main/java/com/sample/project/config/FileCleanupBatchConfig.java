@@ -31,6 +31,41 @@ public class FileCleanupBatchConfig {
 	@Autowired
 	private StepBuilderFactory stepBuilderFactory;
 
+//	@Bean
+//	public Tasklet fileCleanupTasklet() {
+//		return (contribution, chunkContext) -> {
+//			Path directoryPath = Paths.get("src/main/resources/customerFiles/");
+//			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+//			LocalDate aMonthAgo = LocalDate.now().minusMonths(1);
+//
+//			try (Stream<Path> files = Files.walk(directoryPath)) {
+//				files.filter(Files::isRegularFile).forEach(path -> {
+//					String filename = path.getFileName().toString();
+//					try {
+//						if (filename.contains("_") && filename.contains(" ")) {
+//							int startIndex = filename.indexOf('_') + 1;
+//							int endIndex = filename.indexOf(' ');
+//							String dateString = filename.substring(startIndex, endIndex);
+//							LocalDate fileDate = LocalDate.parse(dateString, formatter);
+//
+//							if (fileDate.isBefore(aMonthAgo)) {
+//								Files.delete(path);
+//								System.out.println(
+//										"Deleted old file based on filename date: " + filename);
+//							}
+//						}
+//					} catch (DateTimeParseException | IOException e) {
+//						System.err.println("Failed to process or delete file: " + filename);
+//						e.printStackTrace();
+//					}
+//				});
+//			} catch (IOException e) {
+//				e.printStackTrace();
+//			}
+//			return RepeatStatus.FINISHED;
+//		};
+//	}
+
 	@Bean
 	public Tasklet fileCleanupTasklet() {
 		return (contribution, chunkContext) -> {
@@ -42,9 +77,11 @@ public class FileCleanupBatchConfig {
 				files.filter(Files::isRegularFile).forEach(path -> {
 					String filename = path.getFileName().toString();
 					try {
-						if (filename.contains("_") && filename.contains(" ")) {
-							int startIndex = filename.indexOf('_') + 1;
-							int endIndex = filename.indexOf(' ');
+						String prefix = "Customer";
+						if (filename.startsWith(prefix)) {
+							int startIndex = prefix.length();
+							int endIndex = filename.lastIndexOf('.');
+
 							String dateString = filename.substring(startIndex, endIndex);
 							LocalDate fileDate = LocalDate.parse(dateString, formatter);
 
