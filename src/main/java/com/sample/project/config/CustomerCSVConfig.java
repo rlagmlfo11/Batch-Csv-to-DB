@@ -64,13 +64,10 @@
 //		return new ItemProcessor<Customer, Customer>() {
 //			@Override
 //			public Customer process(Customer customer) throws Exception {
-//				if ("China".equalsIgnoreCase(customer.getCountry())) {
-//					return customer;
-//				} else {
-//					return null;
-//				}
+//				return customer;
 //			}
 //		};
+//
 //	}
 //
 //	@Bean(name = "resultTableCsvWriter")
